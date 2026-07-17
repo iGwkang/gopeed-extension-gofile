@@ -4,7 +4,7 @@
   "title": "Gofile 下载器",
   "description": "Gopeed 插件：自动解析并下载 Gofile 分享链接。",
   "icon": "icon.png",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "homepage": "https://github.com/igwkang/gopeed-extension-gofile",
   "repository": {
     "url": "https://github.com/igwkang/gopeed-extension-gofile"

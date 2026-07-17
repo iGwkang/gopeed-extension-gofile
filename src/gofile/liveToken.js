@@ -58,74 +58,59 @@ async function loadWtScript(userAgent) {
   return code;
 }
 
-function createWtContext(userAgent, lang, extra = {}) {
-  const context = vm.createContext({
-    navigator: { language: lang, userAgent },
-    document: { cookie: '' },
-    console: {
-      log() {},
-      info() {},
-      warn() {},
-      error() {},
-      debug() {},
-    },
-    generateWT: null,
-    _sha256: null,
-    atob,
-    btoa,
-    TextEncoder,
-    TextDecoder,
-    ...extra,
-  });
-  context.window = context;
-  context.self = context;
-  context.globalThis = context;
-  return context;
-}
-
-/**
- * 执行官方脚本并自动缓存最新盐值，供本地回退使用。
- */
-function runOfficialScript(code, userAgent, lang) {
-  const captured = [];
-  const context = createWtContext(userAgent, lang, {
-    __captureSaltInput: function (input) {
-      captured.push(String(input));
-    },
-  });
-
-  const wrapped = `
-${code}
-;(function () {
-  if (typeof _sha256 === 'function') {
-    var __orig = _sha256;
-    _sha256 = function (input) {
-      if (typeof __captureSaltInput === 'function') {
-        __captureSaltInput(String(input));
-      }
-      return __orig(input);
-    };
-  }
-})();
-`;
-
-  new vm.Script(wrapped).runInContext(context);
-
-  if (typeof context.generateWT !== 'function') {
-    throw new Error('官方令牌脚本未导出生成函数');
-  }
-
-  return { context, captured };
-}
-
-function cacheSaltFromCaptured(captured) {
-  if (!captured.length) return;
-  const parts = captured[0].split('::');
+function cacheSaltFromInput(sampleInput) {
+  if (!sampleInput) return;
+  const parts = String(sampleInput).split('::');
   const salt = parts[parts.length - 1];
   if (salt && salt.length >= 6) {
     gopeed.storage.set(STORAGE_SALT_KEY, salt);
     gopeed.logger.debug(`已自动缓存网站令牌盐值：${salt}`);
   }
+}
+
+/**
+ * 在当前 Gopeed 运行时内执行官方脚本（不要新建 VM，避免跨 runtime 传对象报错）。
+ */
+function runOfficialScriptInPlace(code, accountToken, userAgent, lang) {
+  const source = `
+(function () {
+  var navigator = {
+    language: ${JSON.stringify(lang)},
+    userAgent: ${JSON.stringify(userAgent)}
+  };
+  var document = { cookie: '' };
+  var self = typeof self !== 'undefined' ? self : this;
+  var window = typeof window !== 'undefined' ? window : this;
+
+  ${code}
+
+  if (typeof generateWT !== 'function') {
+    throw new Error('官方令牌脚本未导出生成函数');
+  }
+
+  var __captured = [];
+  if (typeof _sha256 === 'function') {
+    var __origSha = _sha256;
+    _sha256 = function (input) {
+      __captured.push(String(input));
+      return __origSha(input);
+    };
+  }
+
+  var token = generateWT(${JSON.stringify(accountToken)});
+  return {
+    token: token,
+    saltInput: __captured.length ? __captured[0] : ''
+  };
+})();
+`;
+
+  // 使用当前 runtime 的 eval，避免 createContext 跨 VM 传 Object
+  const result = vm.runInThisContext(source);
+  if (!result || !result.token) {
+    throw new Error('官方令牌脚本返回了空令牌');
+  }
+  return result;
 }
 
 /**
@@ -136,14 +121,9 @@ export async function generateWebsiteTokenLive(accountToken, options = {}) {
   const lang = options.lang || DEFAULT_LANG;
   const code = await loadWtScript(userAgent);
 
-  const { context, captured } = runOfficialScript(code, userAgent, lang);
-  const token = context.generateWT(accountToken);
-  if (!token || typeof token !== 'string') {
-    throw new Error('官方令牌脚本返回了空令牌');
-  }
-
-  cacheSaltFromCaptured(captured);
-  return token;
+  const result = runOfficialScriptInPlace(code, accountToken, userAgent, lang);
+  cacheSaltFromInput(result.saltInput);
+  return result.token;
 }
 
 /** 读取插件自动缓存的盐值 */
