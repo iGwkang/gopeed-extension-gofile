@@ -1,0 +1,30 @@
+{
+  "name": "gopeed-extension-gofile",
+  "author": "igwkang",
+  "title": "Gofile 下载器",
+  "description": "Gopeed 插件：自动解析并下载 Gofile 分享链接。",
+  "icon": "icon.png",
+  "version": "1.0.4",
+  "homepage": "https://github.com/igwkang/gopeed-extension-gofile",
+  "repository": {
+    "url": "https://github.com/igwkang/gopeed-extension-gofile"
+  },
+  "scripts": [
+    {
+      "event": "onResolve",
+      "match": {
+        "urls": ["*://gofile.io/*", "*://www.gofile.io/*"]
+      },
+      "entry": "dist/index.js"
+    }
+  ],
+  "settings": [
+    {
+      "name": "apiToken",
+      "title": "Account Token",
+      "description": "Gofile 个人资料页中的 Account Token。留空则自动创建游客账号。",
+      "type": "string",
+      "value": ""
+    }
+  ]
+}

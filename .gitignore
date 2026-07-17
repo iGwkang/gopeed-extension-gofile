@@ -1,0 +1,9 @@
+node_modules/
+*.log
+.DS_Store
+.idea/
+.vscode/
+.cursor/
+scripts/wt.obf.js
+scripts/wt.decoded.txt
+scripts/current-salt.json
