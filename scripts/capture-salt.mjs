@@ -1,5 +1,5 @@
 /**
- * 下载 Gofile 官方 wt.obf.js，执行生成函数并输出当前盐值。
+ * 下载 Gofile 官方 /js/wt.obf.js，执行生成函数并输出当前盐值。
  * 用法：node scripts/capture-salt.mjs
  */
 import vm from 'vm';
@@ -9,7 +9,7 @@ import { createHash } from 'crypto';
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
-const code = await fetch('https://gofile.io/dist/js/wt.obf.js', {
+const code = await fetch('https://gofile.io/js/wt.obf.js', {
   headers: { 'User-Agent': UA },
 }).then((r) => r.text());
 
