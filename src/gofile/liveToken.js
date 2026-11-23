@@ -37,7 +37,7 @@ async function loadWtScript(userAgent) {
     return cached;
   }
 
-  const resp = await gofileFetch(`${GOFILE_ORIGIN}/dist/js/wt.obf.js`, {
+  const resp = await gofileFetch(`${GOFILE_ORIGIN}/js/wt.obf.js`, {
     headers: {
       'User-Agent': userAgent,
       Origin: GOFILE_ORIGIN,

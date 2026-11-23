@@ -70,7 +70,17 @@ net/http: TLS handshake timeout
 
 网站令牌由扩展在解析时**自动生成**，普通用户无需任何配置或命令。
 
-扩展会自动下载 Gofile 官方脚本并生成令牌；成功后还会缓存最新盐值，供网络波动时本地回退。
+扩展会自动下载 Gofile 官方脚本（`/js/wt.obf.js`）并生成令牌；成功后还会缓存最新盐值，供网络波动时本地回退。
+
+### 大文件下载 / 连接数（Connections）（重要）
+
+Gofile 的 CDN 支持 Range 下载，但 **Gopeed 默认多连接（例如 16）** 在部分大文件上会出现只下完约 **1 MB** 后速度归零、任务一直显示「运行中」的情况。这是 Gopeed 多段并行与 Gofile 的配合问题，并非分享链接失效。
+
+**建议：**
+
+1. 创建任务后，在任务设置里将 **Connections 设为 1**（必要时可试 2～4）。
+2. 或在 Gopeed **设置** 中降低 HTTP 任务的默认连接数，再下载 Gofile 大文件。
+3. 若任务卡住：暂停/继续无效时，删除任务并重启 Gopeed，再重新用分享链接创建任务（不要勾选「直接下载」）。
 
 ## 调试
 
@@ -88,3 +98,19 @@ net/http: TLS handshake timeout
 ## 许可证
 
 MIT
+
+---
+
+## English — Large downloads & Connections
+
+Gofile CDN supports byte-range requests, but **Gopeed’s default multi-connection download** (e.g. 16 connections) may stall after roughly **1 MB**: speed drops to zero while the task still shows as running. This is a Gopeed ↔ Gofile interaction issue, not a broken share link.
+
+**Workaround:**
+
+1. Set **Connections to 1** in the task settings (2–4 may work for some files).
+2. Or lower the default HTTP connection count in Gopeed **Settings** before downloading large Gofile files.
+3. If stuck: remove the task and restart Gopeed, then create the task again from the `gofile.io/d/...` link (do not use direct download).
+
+### v1.0.7 — Website token script path
+
+Gofile moved the website token script from `/dist/js/wt.obf.js` to **`/js/wt.obf.js`**. This release updates the fetch URL, refreshes the fallback salt, and uses `Accept: */*` on download requests.
